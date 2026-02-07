@@ -1,0 +1,99 @@
+"use client";
+
+import { useState } from "react";
+import { signupAction } from "@/serverActions/auth/signup";
+
+export default function Signup() {
+  const [usernameInput, setUsernameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
+    setError("");
+    setIsLoading(true);
+
+    if (!usernameInput || !passwordInput || !confirmPasswordInput) {
+      setError("All fields are required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (passwordInput !== confirmPasswordInput) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (passwordInput.length < 8) {
+      setError("Password must contain minimum 8 characters");
+      setIsLoading(false);
+      return
+    } 
+    else if (!/[A-Z]/.test(passwordInput)) {
+      setError("Password must contain at least one uppercase letter");
+      setIsLoading(false);
+      return
+    } 
+    else if (!/[!@#$%^&*(),.?\":{}|<>]/.test(passwordInput)) {
+      setError("Password must contain at least one special character");
+      setIsLoading(false);
+      return
+    }
+
+    try {
+      await signupAction(usernameInput, passwordInput);
+    } catch (err: any) {
+      setError(err.message);
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md">
+      <form onSubmit={handleSignup} className="flex flex-col gap-4">
+        <input
+          placeholder="Enter username"
+          value={usernameInput}
+          onChange={(e) => setUsernameInput(e.target.value)}
+          disabled={isLoading}
+          className="w-full h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-[#23482c] bg-transparent text-primary-content placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={passwordInput}
+          onChange={(e) => setPasswordInput(e.target.value)}
+          disabled={isLoading}
+          className="w-full h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-[#23482c] bg-transparent text-primary-content placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+
+        <input
+          type="password"
+          placeholder="Confirm password"
+          value={confirmPasswordInput}
+          onChange={(e) => setConfirmPasswordInput(e.target.value)}
+          disabled={isLoading}
+          className="w-full h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-[#23482c] bg-transparent text-primary-content placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+
+        <button 
+          type="submit"
+          disabled={isLoading}
+          className="btn-base bg-primary text-[#112215] font-extrabold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          {isLoading ? "Signing up..." : "Sign Up"}
+        </button>
+
+        {error && !isLoading && (
+          <div className="text-red-500 dark:text-red-400 text-sm font-medium text-center bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
