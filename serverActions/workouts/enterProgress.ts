@@ -1,11 +1,13 @@
 "use server";
 
 import { Workout, Routine, Exercise } from "@/types";
-import { redirect } from "next/navigation"; 
-import fs from "fs";
-import path from "path";
+import { redirect } from "next/navigation";
+import { Redis } from "@upstash/redis";
 
-const workoutsFilePath = path.join(process.cwd(), "data", "workouts.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 interface EnterProgressParams {
   routine: Routine;
@@ -19,11 +21,8 @@ export default async function enterProgress({
   exercises,
 }: EnterProgressParams): Promise<void> {
   try {
+    const workoutsArr: Workout[] = (await redis.get("workouts")) ?? [];
 
-    const workoutsJson = fs.readFileSync(workoutsFilePath, "utf-8");
-    const workoutsArr = JSON.parse(workoutsJson);
-
-    // Create a new workout object
     const newWorkout: Workout = {
       id: Date.now(),
       routine,
@@ -32,10 +31,10 @@ export default async function enterProgress({
     };
 
     workoutsArr.push(newWorkout);
-    fs.writeFileSync(workoutsFilePath, JSON.stringify(workoutsArr, null, 2));
+    await redis.set("workouts", workoutsArr);
   } catch (error) {
     console.error("Error saving workout:", error);
     throw new Error("Failed to save workout");
   }
-  redirect("/dashboard/progress")
+  redirect("/dashboard/progress");
 }

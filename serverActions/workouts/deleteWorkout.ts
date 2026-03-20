@@ -1,28 +1,20 @@
 "use server";
 
-import fs from "fs";
-import path from "path";
 import { Workout } from "@/types";
+import { Redis } from "@upstash/redis";
 
-const workoutsFilePath = path.join(process.cwd(), "data", "workouts.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function deleteWorkout(
   workoutId: number
 ): Promise<Workout[]> {
   try {
-    if (!fs.existsSync(workoutsFilePath)) {
-      throw new Error("No workouts found");
-    }
-
-    const workoutsJson = fs.readFileSync(workoutsFilePath, "utf-8");
-    const workouts: Workout[] = JSON.parse(workoutsJson);
+    const workouts: Workout[] = (await redis.get("workouts")) ?? [];
     const updatedWorkouts = workouts.filter((w) => w.id !== workoutId);
-
-    fs.writeFileSync(
-      workoutsFilePath,
-      JSON.stringify(updatedWorkouts, null, 2)
-    );
-    
+    await redis.set("workouts", updatedWorkouts);
     return updatedWorkouts;
   } catch (error) {
     console.error("Error deleting workout:", error);
