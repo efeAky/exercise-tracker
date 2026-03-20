@@ -1,22 +1,23 @@
 "use server";
 import { Routine, Exercise } from "@/types";
-import fs from "fs";
-import path from "path";
-import { redirect } from "next/navigation"; 
+import { Redis } from "@upstash/redis";
+import { redirect } from "next/navigation";
 
-const filePath = path.join(process.cwd(), "data", "routines.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function addRoutineAction(
   userId: number,
   routinename: string,
   exercises: Exercise[]
-): Promise<void> { 
+): Promise<void> {
   if (!routinename?.trim() || exercises.length === 0) {
     throw new Error("All inputs must be provided");
   }
 
-  const routinesJson = fs.readFileSync(filePath, "utf-8");
-  const routinesArr = JSON.parse(routinesJson) as Routine[];
+  const routinesArr: Routine[] = (await redis.get("routines")) ?? [];
 
   const newRoutine: Routine = {
     id: Date.now(),
@@ -26,7 +27,7 @@ export default async function addRoutineAction(
   };
 
   routinesArr.push(newRoutine);
-  fs.writeFileSync(filePath, JSON.stringify(routinesArr, null, 2));
+  await redis.set("routines", routinesArr);
 
-  redirect("/dashboard/routines"); 
+  redirect("/dashboard/routines");
 }

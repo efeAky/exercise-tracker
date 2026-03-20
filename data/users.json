@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": 1770507013574,
+    "username": "efe",
+    "hashedpassword": "$2b$10$eYhZylEL1/Vpa4NOO3/rket4eIrhFaeuxf/7lLp8w5471kjc4WMNO"
+  },
+  {
+    "id": 1770514938539,
+    "username": "john",
+    "hashedpassword": "$2b$10$5aYizMktWsTRxPB1NJadzu5Zb4cKsHqXYxrc4iUQ1rShgjTWzq4Iu"
+  },
+  {
+    "id": 1770514967238,
+    "username": "Mike",
+    "hashedpassword": "$2b$10$kxBFB62CWNlRValI29Nv4Oto7lPByQzGxg7/Cm.yQMxKA2fLdx/cS"
+  }
+]

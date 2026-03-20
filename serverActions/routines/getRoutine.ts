@@ -1,12 +1,15 @@
 "use server";
 import { Routine } from "@/types";
-import fs from "fs";
-import path from "path";
+import { Redis } from "@upstash/redis";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { redirect } from "next/navigation";
 
-const filePath = path.join(process.cwd(), "data", "routines.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function getRoutineAction(): Promise<Routine[]> {
@@ -26,12 +29,7 @@ export async function getRoutineAction(): Promise<Routine[]> {
     redirect("/auth/login");
   }
 
-  if (!fs.existsSync(filePath)) {
-    return [];
-  }
-
-  const routinesJson = fs.readFileSync(filePath, "utf-8");
-  const routinesArr = JSON.parse(routinesJson) as Routine[];
+  const routinesArr: Routine[] = (await redis.get("routines")) ?? [];
 
   const userRoutines = routinesArr.filter((r) => r.userId === userId);
 

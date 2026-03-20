@@ -1,25 +1,28 @@
 "use server";
 import { User } from "@/types";
-import fs from "fs";
-import path from "path";
+import { Redis } from "@upstash/redis";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcrypt";
 
-const filePath = path.join(process.cwd(), "data", "users.json");
-const JWT_SECRET = process.env.JWT_SECRET!; // Secret key for JWT
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function loginAction(username: string, password: string) {
-  const usersArr = JSON.parse(fs.readFileSync(filePath, "utf-8")) as User[];
-
   if (!username || !password) {
     throw new Error("Missing username or password");
   }
 
+  const usersArr: User[] = (await redis.get("users")) ?? [];
+
   const user = usersArr.find((u) => u.username === username);
 
-  let isMatch: boolean = false 
+  let isMatch: boolean = false;
 
   if (user) {
     isMatch = await bcrypt.compare(password, user.hashedpassword);
@@ -29,10 +32,8 @@ export async function loginAction(username: string, password: string) {
     throw new Error("Invalid username or password");
   }
 
-  // Create JWT token with userId, expires in 1 hour
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
 
-  // Set HTTP-only cookie for authentication
   const cookieStore = await cookies();
   cookieStore.set("authToken", token, {
     httpOnly: true,

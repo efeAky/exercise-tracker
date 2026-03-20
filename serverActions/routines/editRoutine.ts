@@ -1,10 +1,12 @@
 "use server";
 import { Routine, Exercise } from "@/types";
 import { redirect } from "next/navigation";
-import fs from "fs";
-import path from "path";
+import { Redis } from "@upstash/redis";
 
-const filePath = path.join(process.cwd(), "data", "routines.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function editRoutineAction(
   userId: number,
@@ -16,10 +18,8 @@ export default async function editRoutineAction(
     throw new Error("All inputs must be provided");
   }
 
-  const routinesJson = fs.readFileSync(filePath, "utf-8");
-  const routinesArr = JSON.parse(routinesJson) as Routine[];
+  const routinesArr: Routine[] = (await redis.get("routines")) ?? [];
 
-  // Find routine by ID and user
   const index = routinesArr.findIndex(
     (r) => r.id === routineId && r.userId === userId
   );
@@ -33,7 +33,7 @@ export default async function editRoutineAction(
   };
 
   routinesArr[index] = editedRoutine;
-  fs.writeFileSync(filePath, JSON.stringify(routinesArr, null, 2));
+  await redis.set("routines", routinesArr);
 
   redirect("/dashboard/routines");
 }

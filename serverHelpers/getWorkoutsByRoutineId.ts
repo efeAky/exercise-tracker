@@ -1,21 +1,17 @@
 import { Workout } from "@/types";
-import fs from "fs";
-import path from "path";
+import { Redis } from "@upstash/redis";
 
-const workoutsFilePath = path.join(process.cwd(), "data", "workouts.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function getWorkoutsByRoutineId(
   routineId: number
 ): Promise<Workout[]> {
   try {
-    if (!fs.existsSync(workoutsFilePath)) {
-      return [];
-    }
+    const workouts: Workout[] = (await redis.get("workouts")) ?? [];
 
-    const workoutsJson = fs.readFileSync(workoutsFilePath, "utf-8");
-    const workouts: Workout[] = workoutsJson.trim() ? JSON.parse(workoutsJson) : [];
-    
-    // Filter workouts by routine ID and sort by date (most recent first)
     return workouts
       .filter((w) => w.routine.id === routineId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

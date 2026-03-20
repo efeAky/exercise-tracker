@@ -1,27 +1,21 @@
 "use server";
-
-import fs from "fs";
-import path from "path";
 import { Routine, Workout } from "@/types";
+import { Redis } from "@upstash/redis";
 
-const routinesFilePath = path.join(process.cwd(), "data", "routines.json");
-const workoutsFilePath = path.join(process.cwd(), "data", "workouts.json");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function deleteRoutine(routineId: number): Promise<void> {
   try {
-    // Delete the routine
-    const routinesJson = fs.readFileSync(routinesFilePath, "utf-8");
-    const routines: Routine[] = JSON.parse(routinesJson);
+    const routines: Routine[] = (await redis.get("routines")) ?? [];
     const updatedRoutines = routines.filter((r) => r.id !== routineId);
-    fs.writeFileSync(routinesFilePath, JSON.stringify(updatedRoutines, null, 2));
+    await redis.set("routines", updatedRoutines);
 
-    // Delete all workouts associated with this routine
-    if (fs.existsSync(workoutsFilePath)) {
-      const workoutsJson = fs.readFileSync(workoutsFilePath, "utf-8");
-      const workouts: Workout[] = workoutsJson.trim() ? JSON.parse(workoutsJson) : [];
-      const updatedWorkouts = workouts.filter((w) => w.routine.id !== routineId);
-      fs.writeFileSync(workoutsFilePath, JSON.stringify(updatedWorkouts, null, 2));
-    }
+    const workouts: Workout[] = (await redis.get("workouts")) ?? [];
+    const updatedWorkouts = workouts.filter((w) => w.routine.id !== routineId);
+    await redis.set("workouts", updatedWorkouts);
   } catch (error) {
     console.error("Error deleting routine and associated workouts:", error);
     throw new Error("Failed to delete routine");
