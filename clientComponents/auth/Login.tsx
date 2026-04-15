@@ -31,6 +31,7 @@ export default function Login() {
   return (
     <div className="w-full max-w-md">
       <form onSubmit={handleLogin} className="flex flex-col gap-4">
+
         <input
           placeholder="Enter username"
           value={usernameInput}
@@ -47,6 +48,18 @@ export default function Login() {
           disabled={isLoading}
           className="w-full h-12 px-4 rounded-lg border-2 border-slate-300 dark:border-[#23482c] bg-transparent text-primary-content placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         />
+
+        {/* ✅ ADDED: Demo Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setUsernameInput("DemoAccount");
+            setPassword("Demo12345!");
+          }}
+          className="w-full h-10 rounded-lg bg-slate-100 dark:bg-[#23482c] text-sm font-bold text-slate-700 dark:text-slate-200 hover:opacity-80 transition-all"
+        >
+          Use Demo Account
+        </button>
 
         <button 
           type="submit"
